@@ -1,0 +1,44 @@
+{# ==== 必填输入：title, chapter_number, govern_standard ==== #}
+{%- set missing = [] -%}
+{%- if not title %}{% set _ = missing.append("title") %}{% endif -%}
+{%- if not chapter_number %}{% set _ = missing.append("chapter_number") %}{% endif -%}
+{%- if not govern_standard %}{% set _ = missing.append("govern_standard") %}{% endif -%}
+
+{%- if missing %}
+{
+  "status": "insufficient_context",
+  "missing": {{ missing | tojson }}
+}
+{%- else %}
+{
+  "chapter_number": {{ chapter_number | tojson }},
+  "title": {{ title | tojson }},
+  "user_prompt": {{ (
+    "撰写章节《" ~ title ~ "》（编号 " ~ chapter_number ~ "）。"
+    ~ "依据以下编制要求：" ~ govern_standard ~ "。"
+    ~ "请系统性阐述本节主要内容，逻辑清晰、用语正式、可核查。"
+    ~ (industry and ("结合" ~ industry ~ "行业特点进行说明。") or "")
+  ) | tojson }},
+  "writing_focus": [
+    {# 若提供 focus_hints（列表），优先使用；否则给出通用要点 #}
+    {%- if focus_hints and focus_hints | length > 0 -%}
+      {{ focus_hints | tojson | trim('[]') }}
+    {%- else -%}
+      "明确本节撰写目标与范围",
+      "说明依据与数据来源",
+      "提炼关键要点并分段阐述",
+      "如信息不足，标注并提出补充建议"
+    {%- endif -%}
+  ],
+  "reference_instructions": {{ (
+    references and references | length > 0
+      and ("在撰写中引用以下文献或标准作为依据：" ~ (references | join("；")) ~ "。必要处在文中以 [n] 标注来源，并在结尾列出参考文献清单。"))
+    or "如有相关政策、标准或学术文献，请在文中引用；必要处以 [n] 标注来源，并在结尾列出参考文献清单。"
+  ) | tojson }},
+  "data_instructions": {{ (
+    data_context
+      and ("结合提供的数据进行分析与论证：" ~ data_context ~ "。若数据不足，请列出所需补充项与获取路径。"))
+    or "如涉及参数或指标，请结合项目数据进行分析；若数据不足，请标注并列出需补充的数据清单与获取路径。"
+  ) | tojson }}
+}
+{%- endif %}

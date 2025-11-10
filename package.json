@@ -1,0 +1,52 @@
+{
+  "name": "report_nodejs",
+  "version": "1.0.0",
+  "description": "",
+  "type": "module",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:mcp:manager": "tsx tests/mcp-manager.test.ts",
+    "test:mcp:direct": "tsx tests/mcp-direct.test.ts",
+    "test:mcp:agent": "tsx tests/mcp-agent.test.ts",
+    "test:mcp:debug": "tsx tests/mcp-agent-debug.test.ts",
+    "test:mcp:qwen": "tsx tests/mcp-qwen-config.test.ts",
+    "test:mcp:all": "pnpm test:mcp:manager && pnpm test:mcp:direct && pnpm test:mcp:agent",
+    "test:rag": "tsx tests/rag-system.test.ts",
+    "check:supabase": "tsx scripts/check-supabase-table.ts",
+    "mcp:example": "tsx mcp_usage_example.ts",
+    "pipeline:example": "tsx pipeline_example.ts",
+    "agent:example": "tsx src/examples/mcp-pipeline-example.ts",
+    "report:example": "tsx src/examples/report-generation-example.ts"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.20.0",
+  "dependencies": {
+    "@langchain/classic": "^1.0.1",
+    "@langchain/community": "^1.0.0",
+    "@langchain/core": "^1.0.3",
+    "@langchain/langgraph": "^1.0.1",
+    "@langchain/openai": "^1.0.0",
+    "@langchain/textsplitters": "^1.0.0",
+    "@modelcontextprotocol/sdk": "^1.21.0",
+    "@supabase/supabase-js": "^2.80.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "langchain": "^1.0.3",
+    "multer": "^2.0.2",
+    "openai": "^6.8.1",
+    "pdf-parse": "^2.4.5",
+    "xlsx": "^0.18.5",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.0",
+    "tsx": "^4.20.6"
+  }
+}
