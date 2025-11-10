@@ -26,44 +26,71 @@
 
 ## 📦 安装
 
+### 前置要求
+
+- Node.js 18+ 
+- pnpm 10.20.0+（或使用 `npm install -g pnpm` 安装）
+
+### 安装步骤
+
 ```bash
-# 克隆仓库
+# 1. 克隆仓库
 git clone git@github.com:megumi2022/report_nodejs.git
 cd report_nodejs
 
-# 安装依赖
+# 2. 安装依赖
 pnpm install
 
-# 配置环境变量
+# 3. 配置环境变量
 cp .env.example .env
-# 编辑 .env 文件，填入必要的配置
+# 编辑 .env 文件，填入你的实际配置值
 ```
 
 ## ⚙️ 环境配置
 
-创建 `.env` 文件并配置以下变量：
+### 快速配置
 
-```env
-# LLM 配置
-MODEL_NAME=qwen3-32b
-QWEN_API_KEY=your_api_key
-QWEN_API_BASE=https://your-api-endpoint.com/v1
+1. **复制模板文件**：
+   ```bash
+   cp .env.example .env
+   ```
 
-# Embedding 配置
-EMBEDDING_MODEL=text-embedding-v4
-DASHSCOPE_API_KEY=your_dashscope_key
-DASHSCOPE_BASE_URL=https://dashscope.aliyuncs.com/compatible-mode/v1
+2. **编辑 `.env` 文件**，至少配置以下必需项：
+   ```env
+   # 必需：LLM 配置
+   MODEL_NAME=qwen3-32b
+   QWEN_API_KEY=your_api_key_here
+   QWEN_API_BASE=https://your-api-endpoint.com/v1
+   ```
 
-# Reranker 配置
-RERANKER_BASE_URL=https://dashscope.aliyuncs.com/api/v1/services/rerank
+3. **可选配置**（根据需要使用）：
+   - **RAG 功能**：配置 `DASHSCOPE_API_KEY` 和 `DASHSCOPE_BASE_URL`
+   - **Reranker**：配置 `RERANKER_BASE_URL`（提升检索精度）
+   - **Supabase**：配置 `SUPABASE_URL` 和 `SUPABASE_KEY`（持久化存储）
 
-# Supabase 配置
-SUPABASE_URL=your_supabase_url
-SUPABASE_KEY=your_supabase_key
+### 配置说明
 
-# 向量存储类型 (memory | supabase)
-VECTOR_STORE_TYPE=supabase
+详细的环境变量说明请参考 `.env.example` 文件，其中包含：
+- ✅ 所有可配置的环境变量
+- ✅ 每个变量的说明和默认值
+- ✅ 最小配置和完整配置示例
+- ✅ 不同使用场景的配置建议
+
+### 配置验证
+
+```bash
+# 检查环境变量配置（推荐首次使用前运行）
+pnpm check:env
+
+# 检查 Supabase 配置（如果使用 Supabase）
+pnpm check:supabase
 ```
+
+`check:env` 脚本会：
+- ✅ 检查所有必需的环境变量是否已配置
+- ✅ 显示已配置的可选变量
+- ✅ 检查功能支持情况（RAG、Reranker、Supabase）
+- ✅ 提供配置建议
 
 ## 🚀 快速开始
 

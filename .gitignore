@@ -88,3 +88,4 @@ temp/
 output/
 uploads/
 *.test.ts.bak
+data/*.pdf

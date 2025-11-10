@@ -13,6 +13,7 @@
     "test:mcp:qwen": "tsx tests/mcp-qwen-config.test.ts",
     "test:mcp:all": "pnpm test:mcp:manager && pnpm test:mcp:direct && pnpm test:mcp:agent",
     "test:rag": "tsx tests/rag-system.test.ts",
+    "check:env": "tsx scripts/check-env.ts",
     "check:supabase": "tsx scripts/check-supabase-table.ts",
     "mcp:example": "tsx mcp_usage_example.ts",
     "pipeline:example": "tsx pipeline_example.ts",
