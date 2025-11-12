@@ -8,6 +8,7 @@ import { VectorStoreService, SearchResult } from "./vector-store-service.ts";
 import { CitationService, Citation } from "./citation-service.ts";
 import { ExcelRetrievalService } from "./excel-retrieval-service.ts";
 import { RerankerService } from "./reranker-service.ts";
+import { PromptService } from "./prompt-service.ts";
 
 export interface RetrievalResult {
     source: "excel" | "web" | "database" | "vector" | "pdf";
@@ -24,6 +25,7 @@ export class RetrievalService {
     private citationService: CitationService;
     private excelRetrieval: ExcelRetrievalService;
     private reranker: RerankerService;
+    private promptService: PromptService;
 
     constructor() {
         // 创建专门的检索 Agent 实例
@@ -34,6 +36,7 @@ export class RetrievalService {
         this.citationService = new CitationService();
         this.excelRetrieval = new ExcelRetrievalService();
         this.reranker = new RerankerService();
+        this.promptService = new PromptService();
     }
 
     /**
@@ -260,10 +263,18 @@ export class RetrievalService {
      */
     async retrieveFromWeb(query: string): Promise<RetrievalResult> {
         try {
-            const result = await this.webAgent.execute(
-                `联网检索：${query}`,
-                "你是一个网络检索专家，可以从互联网检索相关信息。"
+            const userPrompt = await this.promptService.getUserPrompt(
+                "retrieval-agent",
+                "web-search-user",
+                { query }
             );
+            const systemPrompt = await this.promptService.renderPrompt(
+                "retrieval-agent",
+                "web-search-system",
+                {}
+            );
+
+            const result = await this.webAgent.execute(userPrompt, systemPrompt);
 
             return {
                 source: "web",
@@ -285,10 +296,18 @@ export class RetrievalService {
      */
     async retrieveFromDatabase(query: string, projectId?: string): Promise<RetrievalResult> {
         try {
-            const result = await this.dbAgent.execute(
-                `从数据库检索：${query}${projectId ? `，项目ID: ${projectId}` : ""}`,
-                "你是一个数据库查询专家，可以从 Supabase 数据库检索数据。"
+            const userPrompt = await this.promptService.getUserPrompt(
+                "retrieval-agent",
+                "database-query-user",
+                { query, project_id: projectId }
             );
+            const systemPrompt = await this.promptService.renderPrompt(
+                "retrieval-agent",
+                "database-query-system",
+                {}
+            );
+
+            const result = await this.dbAgent.execute(userPrompt, systemPrompt);
 
             return {
                 source: "database",

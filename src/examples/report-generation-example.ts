@@ -17,13 +17,9 @@ async function example() {
 
     // 3. 准备输入数据
     const input = {
-        excelPath: "/path/to/excel.xlsx", // Excel 文件路径
-        projectBackground: {
-            projectName: "示例项目",
-            projectType: "政府投资项目",
-            location: "某市",
-            // ... 其他项目背景信息
-        },
+        excelPath: "../data/九江市八里湖新区九龙村农村产业融合示范园建设项目.xlsx", // 九江市八里湖新区九龙村农村产业融合示范园建设项目的Excel
+        // Node.js 允许直接 require JSON 文件用于加载对象（仅限 CommonJS 或 Node, 不可用于浏览器）
+        projectBackground: require("../data/yizhengtong_dev_hamutact_letter_base_info.json"),
         templateKey: "feasibility_v1", // 模板键
         projectId: "PRJP00120250001", // 项目ID
     };

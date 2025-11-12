@@ -73,6 +73,17 @@ END;
 $$;
 ```
 
+### 步骤 1.1: 创建资产处理相关表
+
+如果需要使用新的 Agent 调度流水线，请继续执行 `supabase/migrations/20241111_create_asset_pipeline_tables.sql` 中的脚本，创建以下核心表：
+
+- `assets_index`：记录每个上传资产的入库信息及处理状态（包含 `embed_ready/table_ready` 标记）
+- `asset_chunks`：存储文本/图像 OCR 的分块内容与向量化结果
+- `excel_tables`：保存 Excel Sheets 的结构化解析结果
+- `project_metrics`：存储项目、资产或章节层级的指标数据
+
+执行方式同上：在 Supabase 控制台 SQL Editor 中粘贴脚本并运行，或通过 Supabase CLI 应用迁移。
+
 ### 步骤 2: 配置环境变量
 
 在 `.env` 文件中添加：

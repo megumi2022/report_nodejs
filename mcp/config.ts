@@ -38,5 +38,16 @@ export const mcpServerConfigs: MCPServerConfig[] = [
 
     // HTTP 方式（独立服务）
 
+    {
+        type: "http",
+        name: "zhipu-web-search-sse",
+        baseURL: "https://open.bigmodel.cn/api/mcp/web_search/sse",
+        headers: {
+            Authorization: `Bearer ${process.env.ZHIPU_API_KEY}`,
+        },
+        description: "Zhipu Web Search SSE MCP Server (HTTP)",
+        enabled: true,
+    },
+
 ];
 

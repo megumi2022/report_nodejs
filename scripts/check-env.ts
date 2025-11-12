@@ -137,7 +137,7 @@ function checkConfig(): { passed: boolean; missing: string[] } {
         } else if (value) {
             // 显示已配置的值（隐藏敏感信息）
             if (config.envVar.includes("KEY") || config.envVar.includes("SECRET")) {
-                const preview = value.length > 8 
+                const preview = value.length > 8
                     ? `${value.substring(0, 8)}...${value.substring(value.length - 4)}`
                     : "***";
                 console.log(`✅ ${config.name} (${config.envVar}): ${preview}`);
@@ -146,9 +146,9 @@ function checkConfig(): { passed: boolean; missing: string[] } {
             }
         } else if (!config.required) {
             const defaultValue = config.envVar === "TEMPERATURE" ? "0.7" :
-                               config.envVar === "EMBEDDING_MODEL" ? "text-embedding-v4" :
-                               config.envVar === "VECTOR_STORE_TYPE" ? "memory" :
-                               "未配置";
+                config.envVar === "EMBEDDING_MODEL" ? "text-embedding-v4" :
+                    config.envVar === "VECTOR_STORE_TYPE" ? "memory" :
+                        "未配置";
             console.log(`ℹ️  ${config.name} (${config.envVar}): ${defaultValue} (可选)`);
         }
     }

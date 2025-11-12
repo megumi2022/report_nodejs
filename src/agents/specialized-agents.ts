@@ -4,6 +4,7 @@
  */
 
 import { MCPAgentPipeline } from "./mcp-pipeline.ts";
+import { PromptService } from "../services/prompt-service.ts";
 
 /**
  * 专门的 Agent 管理器
@@ -18,12 +19,18 @@ export class SpecializedAgents {
     // 内容生成 Agent
     public readonly contentAgent: MCPAgentPipeline;
 
+    // 提示词服务
+    private readonly promptService: PromptService;
+
     constructor() {
         // 创建独立的 Pipeline 实例
         // 每个实例可以配置不同的工具集
         this.outlineAgent = new MCPAgentPipeline();
         this.promptAgent = new MCPAgentPipeline();
         this.contentAgent = new MCPAgentPipeline();
+
+        // 初始化提示词服务
+        this.promptService = new PromptService();
     }
 
     /**
@@ -44,27 +51,23 @@ export class SpecializedAgents {
         section: any,
         projectBackground: any
     ): Promise<string[]> {
-        const prompt = `根据以下章节信息生成子标题：
-
-章节ID: ${section.id}
-章节标题: ${section.title}
-治理标准: ${section.govern_standard || "无"}
-
-项目背景：
-${JSON.stringify(projectBackground, null, 2)}
-
-请生成 3-5 个相关的子标题，要求：
-1. 子标题应该与章节主题紧密相关
-2. 符合政府报告的规范和要求
-3. 如果提供了治理标准，应该参考标准内容
-
-返回 JSON 数组格式，只包含子标题字符串：
-["子标题1", "子标题2", "子标题3", ...]`;
-
-        const result = await this.outlineAgent.execute(
-            prompt,
-            "你是一个专业的政府投资报告撰写专家，擅长生成符合规范的章节子标题。必须返回有效的 JSON 数组格式。"
+        // 从模板加载提示词
+        const userPrompt = await this.promptService.getUserPrompt(
+            "outline-agent",
+            "generate-subtitles",
+            {
+                section: {
+                    id: section.id,
+                    title: section.title,
+                    govern_standard: section.govern_standard || "无",
+                },
+                project_background: projectBackground,
+            }
         );
+
+        const systemPrompt = await this.promptService.getSystemPrompt("outline-agent");
+
+        const result = await this.outlineAgent.execute(userPrompt, systemPrompt);
 
         try {
             const jsonMatch = result.match(/\[[\s\S]*\]/);
@@ -98,53 +101,97 @@ ${JSON.stringify(projectBackground, null, 2)}
         user_prompt_table?: string;
         queries: string[];
     }> {
-        const prompt = `根据以下章节信息生成详细的撰写指令：
-
-章节编号: ${node.chapter_number}
-章节标题: ${node.title}
-治理标准: ${node.govern_standard || "无"}
-
-项目背景：
-${JSON.stringify(projectBackground, null, 2)}
-
-请返回 JSON 格式：
-{
-  "user_prompt_text": "详细的文本撰写要求（Markdown格式），包括内容结构、关键要点、字数要求等",
-  "user_prompt_image": "图片要求说明（如果有，如需要配图、图表类型等）",
-  "user_prompt_table": "表格要求说明（如果有，如需要统计表格、数据表格等）",
-  "queries": ["检索查询1", "检索查询2", ...]
-}
-
-要求：
-1. user_prompt_text 要详细具体，包含撰写要求
-2. queries 要明确，便于后续检索
-3. 如果不需要图片或表格，对应字段可以为 null`;
-
-        const result = await this.promptAgent.execute(
-            prompt,
-            "你是一个提示词设计专家，擅长根据治理标准和项目背景生成详细的撰写指令和检索查询。必须返回有效的 JSON 格式。"
-        );
-
         try {
+            // 从模板加载提示词
+            const userPrompt = await this.promptService.getUserPrompt(
+                "prompt-agent",
+                "generate-instruction",
+                {
+                    node: {
+                        chapter_number: node.chapter_number,
+                        title: node.title,
+                        govern_standard: node.govern_standard || "无",
+                    },
+                    project_background: projectBackground,
+                }
+            );
+
+            const systemPrompt = await this.promptService.getSystemPrompt("prompt-agent");
+
+            const result = await this.promptAgent.execute(userPrompt, systemPrompt);
+
+            if (!result || result.trim().length === 0) {
+                throw new Error("Agent 返回结果为空");
+            }
+
+            // 尝试多种方式提取 JSON
+            let parsed: any = null;
+
+            // 方法1: 直接匹配 JSON 对象
             const jsonMatch = result.match(/\{[\s\S]*\}/);
             if (jsonMatch) {
-                const parsed = JSON.parse(jsonMatch[0]);
-                return {
+                try {
+                    parsed = JSON.parse(jsonMatch[0]);
+                } catch (e) {
+                    console.warn("   ⚠️  JSON 解析失败，尝试其他方法");
+                }
+            }
+
+            // 方法2: 如果方法1失败，尝试提取代码块中的 JSON
+            if (!parsed) {
+                const codeBlockMatch = result.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+                if (codeBlockMatch) {
+                    try {
+                        parsed = JSON.parse(codeBlockMatch[1]);
+                    } catch (e) {
+                        console.warn("   ⚠️  代码块 JSON 解析失败");
+                    }
+                }
+            }
+
+            // 方法3: 如果都失败，尝试直接解析整个结果
+            if (!parsed) {
+                try {
+                    parsed = JSON.parse(result.trim());
+                } catch (e) {
+                    console.warn("   ⚠️  直接解析失败");
+                }
+            }
+
+            if (parsed && typeof parsed === 'object') {
+                const instruction = {
                     user_prompt_text: parsed.user_prompt_text || "",
                     user_prompt_image: parsed.user_prompt_image || null,
                     user_prompt_table: parsed.user_prompt_table || null,
                     queries: Array.isArray(parsed.queries) ? parsed.queries : [],
                 };
+
+                // 验证结果
+                if (!instruction.user_prompt_text || instruction.user_prompt_text.trim().length === 0) {
+                    console.warn(`   ⚠️  节点 ${node.chapter_number} 生成的 user_prompt_text 为空，使用降级策略`);
+                    instruction.user_prompt_text = node.govern_standard || `撰写章节：${node.title}`;
+                }
+
+                return instruction;
             }
 
-            throw new Error("返回格式不正确");
+            throw new Error(`无法从 Agent 返回结果中提取有效的 JSON。返回内容: ${result.substring(0, 200)}...`);
         } catch (error: any) {
-            console.error("Instruction 解析失败:", error.message);
-            // 返回默认值
-            return {
+            console.error(`   ❌ [generateInstruction] 节点 ${node.chapter_number} 处理失败:`, error.message);
+            if (error.stack) {
+                console.error(`   堆栈:`, error.stack);
+            }
+
+            // 返回降级值
+            const fallback = {
                 user_prompt_text: node.govern_standard || `撰写章节：${node.title}`,
-                queries: [],
+                user_prompt_image: undefined,
+                user_prompt_table: undefined,
+                queries: [] as string[],
             };
+
+            console.warn(`   🔄 使用降级策略: ${fallback.user_prompt_text.substring(0, 50)}...`);
+            return fallback;
         }
     }
 
@@ -156,34 +203,20 @@ ${JSON.stringify(projectBackground, null, 2)}
         prompt: string,
         retrievalResults: any[]
     ): Promise<{ text?: string; tables?: any[]; images?: string[] }> {
-        const retrievalSummary = retrievalResults
-            .map((r, i) => `检索结果 ${i + 1} (来源: ${r.source}):\n${JSON.stringify(r.data, null, 2)}`)
-            .join("\n\n");
-
-        const contentPrompt = `根据以下信息生成报告章节内容：
-
-章节标题: ${sectionTitle}
-撰写要求: ${prompt}
-
-检索结果:
-${retrievalSummary}
-
-请生成完整的章节内容，包括：
-1. 文本内容（Markdown 格式）
-2. 表格数据（如果有）
-3. 图表说明（如果有）
-
-返回 JSON 格式：
-{
-  "text": "章节的文本内容（Markdown格式）",
-  "tables": [表格数据数组],
-  "images": [图表说明数组]
-}`;
-
-        const result = await this.contentAgent.execute(
-            contentPrompt,
-            "你是一个专业的报告撰写专家，擅长根据提示词和检索结果生成高质量的报告内容。"
+        // 从模板加载提示词
+        const userPrompt = await this.promptService.getUserPrompt(
+            "content-agent",
+            "generate-content",
+            {
+                section_title: sectionTitle,
+                prompt: prompt,
+                retrieval_results: retrievalResults,
+            }
         );
+
+        const systemPrompt = await this.promptService.getSystemPrompt("content-agent");
+
+        const result = await this.contentAgent.execute(userPrompt, systemPrompt);
 
         try {
             const jsonMatch = result.match(/\{[\s\S]*\}/);

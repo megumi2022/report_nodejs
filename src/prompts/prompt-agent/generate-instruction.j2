@@ -1,0 +1,22 @@
+根据以下章节信息生成详细的撰写指令：
+
+章节编号: {{ node.chapter_number }}
+章节标题: {{ node.title }}
+治理标准: {{ node.govern_standard | default("无") }}
+
+项目背景：
+{{ project_background | tojson(indent=2) }}
+
+请返回 JSON 格式：
+{
+  "user_prompt_text": "详细的文本撰写要求（Markdown格式），包括内容结构、关键要点、字数要求等",
+  "user_prompt_image": "图片要求说明（如果有，如需要配图、图表类型等）",
+  "user_prompt_table": "表格要求说明（如果有，如需要统计表格、数据表格等）",
+  "queries": ["检索查询1", "检索查询2", ...]
+}
+
+要求：
+1. user_prompt_text 要详细具体，包含撰写要求
+2. queries 要明确，便于后续检索
+3. 如果不需要图片或表格，对应字段可以为 null
+
